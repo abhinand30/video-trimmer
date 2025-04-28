@@ -14,7 +14,7 @@ const VideoPlayer = () => {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [thumbnails, setThumbnails] = useState<string[] | undefined>([]);
-
+  
   const regionsPlugin = RegionsPlugin.create()
   useEffect(() => {
     if (!containerRef.current) return;
@@ -30,7 +30,7 @@ const VideoPlayer = () => {
       barAlign: 'bottom',
       barWidth: 5,
       plugins: [
-        RegionsPlugin.create(),
+        regionsPlugin,
         TimelinePlugin.create({ height: 20 })
       ]
     });
@@ -43,8 +43,8 @@ const VideoPlayer = () => {
       setDuration(totalDuration);
 
 
-      // const markerWidth = 0.01;
-      const startRegion=regions.addRegion({
+      const markerWidth = 0.01;
+      regionsPlugin.addRegion({
         id: "start",
         start: 0,
         end: markerWidth,
@@ -52,7 +52,7 @@ const VideoPlayer = () => {
         drag: true,
         resize: true,
       });
-      const endRegion=regions.addRegion({
+      regionsPlugin.addRegion({
         id: "end",
         start: totalDuration-markerWidth,
         end: markerWidth,
@@ -60,10 +60,10 @@ const VideoPlayer = () => {
         drag: true,
         resize: true,
       });
-      regions.enableDragSelection({
+      regionsPlugin.enableDragSelection({
         color: 'rgba(255, 0, 0, 0.1)',
       })
-      setSelectedRegions([startRegion,endRegion])
+  
     })
 
 
@@ -83,14 +83,7 @@ const VideoPlayer = () => {
       }
     });
 
-    // Region event listeners
-    regionsPlugin.on('region-created', region => {
-      console.log('Region created:', region);
-    });
-
-    regionsPlugin.on('region-updated', region => {
-      console.log('Region updated:', region);
-    });
+   
 
 
     ws.on('timeupdate', (time) => {
@@ -102,7 +95,27 @@ const VideoPlayer = () => {
     return () => {
       ws.destroy();
     };
-  }, [videoUrl]);
+  }, [videoUrl,regionsPlugin]);
+
+  useEffect(() => {
+    if (!wavesurfer || !regionsPlugin) return;
+  
+    regionsPlugin.on('region-created', (region) => {
+      console.log('Region created:', region);
+    });
+  
+    regionsPlugin.on('region-updated', (region) => {
+      console.log('Region updated:', region);
+    });
+
+  
+    // return () => {
+    //   // Cleanup event listeners when the component unmounts or dependencies change
+    //   regionsPlugin.off('region-created');
+    //   regionsPlugin.off('region-updated');
+    // };
+  }, [wavesurfer]);
+  
 
   const handlePlayback = () => {
     if (!wavesurfer) return;
@@ -195,16 +208,10 @@ const VideoPlayer = () => {
           <h6>{duration.toFixed(0)}.00</h6>
           <p>sound</p>
           <div>
-            <input type="range" className="form-range" id="customRange1" />
+            <input type="range"  className="form-range" id="customRange1" />
           </div>
-
-
         </div>
-
       </div>
-
-
-
       <ThumbnailComponent thumbnails={thumbnails} />
     </div>
   );
