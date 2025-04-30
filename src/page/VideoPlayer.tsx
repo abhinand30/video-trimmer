@@ -15,10 +15,11 @@ const VideoPlayer = () => {
   const [wavesurfer, setWavesurfer] = useState<WaveSurfer>();
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(0.8);
+  const [volume, setVolume] = useState(0.0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [thumbnails, setThumbnails] = useState<{url: string, time: number}[]>([]);
   const [currentRegion, setCurrentRegion] = useState<any>(null);
+  
 
   const regionsPlugin = useRef(RegionsPlugin.create()).current;
   const topTimeline = TimelinePlugin.create({
@@ -94,11 +95,9 @@ const VideoPlayer = () => {
 
     const handleRegionCreated = (region: any) => {
       if (currentRegion) {
-        // currentRegion.remove();
-        // currentRegion.clearRegions()
-      // regionsPlugin.destroy()
-      
-        setCurrentRegion(null)
+        currentRegion.remove();
+        
+        // setCurrentRegion(null)
       }
       
       setCurrentRegion(region);
@@ -116,14 +115,21 @@ const VideoPlayer = () => {
         videoRef.current?.pause();
       }
     };
-
+    const handleRegionLoop = () => {
+      if (currentRegion) {
+        wavesurfer.play( currentRegion.start, currentTime);
+        if (videoRef.current) {
+          videoRef.current.currentTime = currentRegion.start;
+          videoRef.current.play();
+        }
+      }
+    };
+  
     regionsPlugin.on("region-created", handleRegionCreated);
+    wavesurfer.on("finish", handleRegionLoop);
     regionsPlugin.on("region-out", handleRegionOut);
+   
 
-    // return () => {
-    //   regionsPlugin.un("region-created", handleRegionCreated);
-    //   regionsPlugin.un("region-out", handleRegionOut);
-    // };
   }, [wavesurfer, currentRegion]);
 
   
@@ -184,20 +190,19 @@ const VideoPlayer = () => {
       wavesurfer.pause();
       videoRef.current?.pause();
     } else {
-      
       if (currentRegion) {
         wavesurfer.play(
           Math.max(currentRegion.start, currentTime),
           currentRegion.end
         );
         videoRef.current?.play();
-      } else{
+      } else if(currentRegion.end>currentTime) {
         wavesurfer.play();
         videoRef.current?.play();
       }
     }
   };
-
+// console.log(currentRegion?.end,currentTime,duration)
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const seekTo = parseFloat(e.target.value) / 100;
     wavesurfer?.seekTo(seekTo);
@@ -226,8 +231,8 @@ const VideoPlayer = () => {
       borderRadius: '8px',
       boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
     }}>
-      <video ref={videoRef} src={videoUrl} autoPlay  className="bg-white w-100 h-75 rounded-2 mb-2">
-        {/* <source src={videoUrl}/> */}
+      <video ref={videoRef}  className="bg-white w-100 h-75 rounded-2 mb-2">
+        <source src={videoUrl}/>
       </video>
       
       <div ref={containerRef} className="mb-2 overflow-hidden"/>
