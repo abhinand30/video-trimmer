@@ -1,6 +1,7 @@
 import React from 'react'
+import { ThumbnailProps } from '../common/types'
 
-const ThumbnailComponent = (props) => {
+const ThumbnailComponent:React.FC<ThumbnailProps> = (props) => {
     const {thumbnails,onClick}=props
   return (
     <div style={{ display: 'flex',  marginTop: '20px' }}>
